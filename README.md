@@ -1,16 +1,18 @@
 # Real World Cloud Projects
 
-A personal collection of real-world Azure engineering case studies — things I've built, design decisions made, trade-offs weighed, and lessons learned. Each follows a consistent structure to showcase context, technical reasoning, and practical outcomes.
+A collection of real‑world Azure engineering case studies — projects I’ve built, design decisions explored, trade‑offs weighed, and lessons learned. Each follows a consistent structure to highlight context, technical reasoning, and practical outcomes.
+
+🔧 Work in progress: Case studies are currently in draft form and will be updated shortly.
 
 ## Featured Projects
 
-| # | Case Study | Theme |
-| --- | ------------ | ------- |
-| 1 | [Data Centre to Azure: Lift-and-Shift Migration with Landing Zone Foundations](docs/1-data-centre-to-azure-lift-and-shift.md) | Initial cloud migration to IaaS using landing zones |
-| 2 | [Adopting GitOps for Azure: From Click-Ops to Pipeline-Driven Deployments](docs/2-gitops-azure-deployments.md) | IaC standardisation with Azure DevOps repos/pipelines |
-| 3 | [Replatforming SQL from IaaS VMs to Azure SQL Managed Instance](docs/3-sql-replatform-to-managed-instance.md) | Database modernisation post-migration |
-| 4 | [Automating TLS Certificates with ACME for Azure Resources](docs/4-acme-tls-automation.md) | Certificate lifecycle automation via IaC/pipelines |
-| 5 | [Replatforming WordPress from VMs to Azure Web Apps with IaC](docs/5-wordpress-replatform-webapps.md) | App modernisation with multi-environment IaC pattern |
+| # | Case Study | Focus Area |
+| --- | ------------ | ----------- |
+| 1 | [Data Centre to Azure: Lift‑and‑Shift Migration with Landing Zone Foundations](docs/1-data-centre-to-azure-lift-and-shift.md) | Initial cloud migration to IaaS using Landing Zones |
+| 2 | [Adopting GitOps for Azure: From Click‑Ops to Pipeline‑Driven Deployments](docs/2-gitops-azure-deployments.md) | Infrastructure‑as‑Code standardisation with Azure DevOps pipelines |
+| 3 | [Replatforming SQL from IaaS VMs to Azure SQL Managed Instance](docs/3-sql-replatform-to-managed-instance.md) | Database modernisation post‑migration |
+| 4 | [Automating TLS Certificates with ACME for Azure Resources](docs/4-acme-tls-automation.md) | Certificate lifecycle automation via ACME and IaC |
+| 5 | [Replatforming WordPress from VMs to Azure Web Apps with IaC](docs/5-wordpress-replatform-webapps.md) | Application modernisation using repeatable multi‑environment IaC patterns |
 
 ## Repository Structure
 
