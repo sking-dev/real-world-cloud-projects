@@ -2,7 +2,9 @@
 
 A collection of real‑world Azure engineering case studies — projects I’ve built, design decisions explored, trade‑offs weighed, and lessons learned. Each follows a consistent structure to highlight context, technical reasoning, and practical outcomes.
 
-🔧 Work in progress: Case studies are currently in draft form and will be updated shortly.
+🔧 **Work in progress:** Case studies are currently in draft form and will be updated shortly.
+
+🤖 **AI assistance:** Parts of this content were drafted and refined with the help of AI tools, alongside a manual review process.
 
 ## Featured Projects
 
