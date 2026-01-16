@@ -1,5 +1,7 @@
 # Data Centre to Azure: Lift‑and‑Shift Migration with Landing Zone Foundations
 
+⚙️ Draft version — content under review and subject to updates.
+
 ## Context and Objective
 
 The organisation operated workloads in a long-term physical data centre on ageing hardware that had reached, or was fast approaching, end‑of‑life. The infrastructure was costly to maintain, capacity‑limited, and lacked the flexibility for new service deployments.  
