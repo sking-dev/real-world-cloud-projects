@@ -17,7 +17,6 @@ This project implemented Azure Policy as the initial governance layer to standar
 - Audit and enable diagnostic settings on critical resources (VMs, VNets, Key Vault) for security and operations monitoring.  
 - Audit high‑risk configurations (public IPs, unencrypted storage) before full enforcement.
 - Deploy policies via Infrastructure as Code with pipeline automation for repeatability and auditability.
-  - TODO: Some initial trials with Terraform showed that the Azure Policy service had some rough edges, so to speak, and ARM templates were required within the Terraform code to achieve what was required - so some policies were deployed via the ARM Portal - please can you check if this state of affairs still applies or if Terraform is now a first class citizen for Policy deployments?
 - Support management group hierarchy for future subscription scaling.
 
 ## Architecture
