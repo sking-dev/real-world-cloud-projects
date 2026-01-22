@@ -17,7 +17,7 @@ Read in numerical order (1→5) for the natural project progression:
 - **[5. Replatforming WordPress from VMs to Azure Web Apps with IaC](5-wordpress-replatform-webapps.md)**  
   Application modernisation pattern with DEV/LIV environment separation.
 
-  - **[6. Azure Policy Implementation for Landing Zone Governance](6-azure-policy-landing-zone.md)**  
+- **[6. Azure Policy Implementation for Landing Zone Governance](6-azure-policy-landing-zone.md)**  
   Hub-and-spoke landing zone governance using Azure Policy initiatives, IaC deployment, and compliance automation.
 
 Each follows the same structure: Context → Requirements → Architecture → Key Decisions → Operations → Future Enhancements → Code References.
