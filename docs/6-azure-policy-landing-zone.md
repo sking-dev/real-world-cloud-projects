@@ -37,7 +37,8 @@ This project implemented Azure Policy as the initial governance layer to standar
 - Maintained audit effect initially to build stakeholder confidence before controlled transition to enforce where appropriate.  
 - Aligned baseline policies to Microsoft Cloud Adoption Framework (CAF) landing zone guidance, using built‑in initiatives where appropriate and supplementing with custom tagging policies.
 - Chose **Terraform** over native Azure Policy APIs for policy management to maintain consistency with existing IaC patterns and enable multi‑environment deployments.
-- Implemented **DeployIfNotExists** policies for diagnostics rather than deny policies to proactively configure resources while allowing manual override where justified.  
+- Implemented **DeployIfNotExists** policies for diagnostics rather than deny policies to proactively configure resources while allowing manual override where justified.
+  - TODO: Qualify this as allowing Azure Policy to be proactive risks generating drift in the IaC...
 - Scoped initial rollout to landing zone management group rather than root to limit blast radius during validation.
 
 ## Operations
@@ -53,8 +54,11 @@ This project implemented Azure Policy as the initial governance layer to standar
 - Expand policy coverage to include Azure Defender plans and regulatory frameworks (e.g. ISO 27001).
 - Implement custom policy definitions for workload‑specific naming conventions and resource lock requirements.
 - Integrate policy compliance data with ServiceNow CMDB for automated ticket generation on drift detection.
+  - TODO: Qualify this...
 - Deploy Azure Blueprints for self‑service subscription provisioning with pre‑baked policy assignments.
+  - TODO: Qualify this...
 - Add budget alerts and cost management policies linked to mandatory tagging for financial governance.
+  - TODO: Qualify this...
 
 ## Code References
 
