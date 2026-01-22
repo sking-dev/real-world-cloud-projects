@@ -15,6 +15,7 @@ A collection of real‑world Azure engineering case studies — projects I’ve 
 | 3 | [Replatforming SQL from IaaS VMs to Azure SQL Managed Instance](docs/3-sql-replatform-to-managed-instance.md) | Database modernisation post‑migration |
 | 4 | [Automating TLS Certificates with ACME for Azure Resources](docs/4-acme-tls-automation.md) | Certificate lifecycle automation via ACME and IaC |
 | 5 | [Replatforming WordPress from VMs to Azure Web Apps with IaC](docs/5-wordpress-replatform-webapps.md) | Application modernisation using repeatable multi‑environment IaC patterns |
+| 6 | [Azure Policy Implementation for Landing Zone Governance](docs/6-azure-policy-landing-zone.md) | Hub-and-spoke landing zone governance using IaC-controlled Azure Policy |
 
 ## Repository Structure
 
