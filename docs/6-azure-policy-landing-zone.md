@@ -78,7 +78,9 @@ This section outlines the baseline management group structure and validation app
 Root (tenant root group)
 ├── Platform
 ├── mg-landing-zone      # PROD: Contains hub connectivity + spoke workload subscriptions
-└── mg-test-landing-zone # TEST: Empty MG for policy validation (no subscriptions required)
+└── mg-landing-zone-test # TEST: Empty MG for policy validation (no subscriptions required)
+
+TODO: Qualify this structure within the bigger picture to ensure flexibility, especially if there's Prod / Non-Prod separation.
 ```
 
 ### Structure Rationale
@@ -89,7 +91,7 @@ Root (tenant root group)
 - Single policy assignment scope ensures consistent governance inheritance
 - Standard "platform/foundation" naming aligns with landing zone patterns
 
-**mg-test-landing-zone (Validation):**
+**mg-landing-zone-test (Validation):**
 
 - **Empty management group** - no test subscriptions needed
 - Tests policy inheritance, assignment scoping, exemption handling, and compliance reporting
@@ -126,6 +128,8 @@ Good practice pattern (example of)
 - MyOrg-Platform-Diagnostics
 - MyOrg-Workloads-VMs
 - MyOrg-Cost-Management
+
+TODO: Qualify the names used; the clearer they are, the better in terms of readability and troubelshooting.
 ```
 
 **Policy effect strategy:**
