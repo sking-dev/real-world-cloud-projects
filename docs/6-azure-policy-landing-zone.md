@@ -129,7 +129,8 @@ Good practice pattern (example of)
 - MyOrg-Workloads-VMs
 - MyOrg-Cost-Management
 
-TODO: Qualify the names used; the clearer they are, the better in terms of readability and troubelshooting.
+TODO: Qualify the names used; the clearer they are, the better in terms of readability and troubleshooting.
+    : E.g. "Which initiative is blocking my deployment, and why is that?"
 ```
 
 **Policy effect strategy:**
