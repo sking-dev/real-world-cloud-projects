@@ -74,21 +74,24 @@ This section outlines the baseline management group structure and validation app
 
 ```text
 Tenant Root Group
-├─ mg-myorg-common                          # Tenant-wide baselines + Landing Zone foundation
-│  ├─ mg-myorg-landing-zone                # FOCUS AREA 1: Workload spokes + landing zone policies
-│  │  └─ sub-myorg-spoke                    # Example spoke subscription (app/workload)
-│  └─ my-myorg-platform                    # FOCUS AREA 2: Shared platform services
-│     ├─ mg-myorg-connectivity             # Hub networking + connectivity (hub-and-spoke)
-│     │  └─ sub-myorg-hub                  # Hub subscription (shared VNet, firewall, etc.)
-│     ├─ mg-myorg-aiservices
-│     │  ├─ mg-myorg-aiservices-nonprod
-│     │  └─ mg-myorg-aiservices-prod
-│     ├─ mg-myorg-finance
-│     │  ├─ mg-myorg-finance-nonprod
-│     │  └─ mg-myorg-finance-prod
-│     └─ mg-myorg-identity
-│        ├─ mg-myorg-identity-nonprod
-│        └─ mg-myorg-identity-prod
+├─ mg-myorg-common                          # PROD: Tenant-wide baselines
+├─ mg-myorg-common-test                     # TEST: Baseline + security validation
+├─ mg-myorg-landing-zone                    # PROD FOCUS 1: Workload spokes + landing zone policies
+│  └─ sub-myorg-spoke                       # Example spoke subscription (app/workload)
+├─ mg-myorg-landing-zone-test               # TEST: Workload policies - no subs required
+├─ my-myorg-platform                        # PROD FOCUS 2: Shared platform services
+│  ├─ mg-myorg-connectivity                 # Hub networking + connectivity (hub-and-spoke)
+│  │  └─ sub-myorg-hub                      # Hub subscription (shared VNet, firewall, etc.)
+│  ├─ mg-myorg-aiservices
+│  │  ├─ mg-myorg-aiservices-nonprod
+│  │  └─ mg-myorg-aiservices-prod
+│  ├─ mg-myorg-finance
+│  │  ├─ mg-myorg-finance-nonprod
+│  │  └─ mg-myorg-finance-prod
+│  └─ mg-myorg-identity
+│     ├─ mg-myorg-identity-nonprod
+│     └─ mg-myorg-identity-prod
+├─ my-myorg-platform-test                  # TEST: Platform networking policies - no subs required
 └─ mg-myorg-root                           # Legacy staging / future expansion / sandbox
    ├─ mg-myorg-root-prod
    │  ├─ mg-myorg-root-prod-domains        # Business domain workloads
