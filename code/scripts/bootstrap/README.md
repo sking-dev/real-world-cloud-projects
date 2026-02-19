@@ -3,7 +3,7 @@
 One‑time setup (subscriptions, remote state, pipeline identity) that must exist before this project and future projects can support subsequent IaC‑controlled deployments.
 
 ```text
-1. create-arm-subscriptions.sh - DEPRECATED (intentionally not implemented)
+1. create-arm-subscriptions.sh - DEPRECATED (intentionally not implemented; subscription creation is manual by design)
 2. create-remote-state-resources.sh
 3. create-pipeline-spn.sh
 4. create-pipeline-service-connection.sh
@@ -18,7 +18,9 @@ The original intention to provide a `create-arm-subscriptions.sh` script has the
 
 ### Why this is Manual
 
-Subscription creation is intentionally excluded from automation because it operates at the billing boundary and carries financial risk. Restricting this step to an explicitly authorised human identity reduces blast radius and aligns with least‑privilege and audit requirements.
+Subscription creation is intentionally excluded from automation because it operates at the billing boundary and carries financial risk.
+
+Restricting this step to an explicitly authorised human identity reduces blast radius and aligns with least‑privilege, audit, and financial‑control requirements.
 
 Management group creation and subscription placement are performed later via IaC, once these prerequisite subscriptions and identities exist.
 
@@ -28,7 +30,7 @@ The recommended bootstrap process is:
 
 - A designated "SubCreate" EA enrolment account (with subscription‑creation rights) creates each required subscription in the correct tenant and offer
 - The SubCreate user assigns the platform engineer a temporary static Owner role at the subscription scope
-- Using this temporary ownership, the engineer:
+- Using this temporary ownership, the platform engineer:
   - Enables and configures Privileged Identity Management (PIM) for the subscription(s)
 - The engineer then:
   - Uses PIM to activate eligible Owner access
@@ -46,16 +48,27 @@ Subscription creation is expected to be a rare, one‑off bootstrap activity. Al
    - Assign YOUR_EMAIL → Owner on each new subscription (IAM → Add → Owner)
    - Note subscription IDs
 
-1. **verify-subscriptions-ready.sh** (run by platform engineer)
+1. **01-verify-subscriptions-ready.sh** (run by platform engineer)
    - Confirms engineer has Owner access to target subscriptions
    - Fails fast if handoff incomplete
 
-2. **create-remote-state-resources.sh** (run by engineer)  
+2. **create-remote-state-resources.sh** (run by platform engineer)  
 3. **create-pipeline-spn.sh** (run by engineer)
-4. **create-pipeline-service-connection.sh** (run by engineer)
+4. **create-pipeline-service-connection.sh** (run by platform engineer)
 5. **assign-pim-roles.sh** (run by engineer) → replace static Owner with PIM eligible
   - Removes all permanent Owner assignments
+  - This is the final bootstrap step and should be run only after all other scripts succeed
 ```
+
+## Bootstrap Completion Criteria
+
+A subscription is considered bootstrap‑complete when:
+
+- No permanent human Owner role assignments remain
+- PIM eligible Owner access is configured for platform engineers
+- Terraform remote state storage is provisioned and accessible
+- The pipeline identity can authenticate successfully
+- Subscription IDs are recorded as inputs for governance IaC
 
 ## Prerequisites
 
