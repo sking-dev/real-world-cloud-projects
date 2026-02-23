@@ -28,6 +28,35 @@ SUBSCRIPTION_NAMES=(
   "sub-myorg-azuregovernance-prod"
 )
 
+# Expected number of subscriptions (sanity check)
+EXPECTED_SUB_COUNT=4
+
+# Expected environment suffixes (light guardrail; warnings only)
+EXPECTED_ENV_SUFFIXES=(
+  "dev"
+  "uat"
+  "pp"
+  "prod"
+)
+
+# -------------------------------------------------------------------
+# INTENT CONFIRMATION
+# -------------------------------------------------------------------
+
+echo "[INFO] Subscriptions supplied for validation:"
+for SUB_NAME in "${SUBSCRIPTION_NAMES[@]}"; do
+  echo "       - $SUB_NAME"
+done
+echo
+
+if [[ "${#SUBSCRIPTION_NAMES[@]}" -ne "$EXPECTED_SUB_COUNT" ]]; then
+  echo "[ERROR] Expected $EXPECTED_SUB_COUNT subscriptions but found ${#SUBSCRIPTION_NAMES[@]}"
+  exit 1
+fi
+
+echo "[OK] Subscription count matches expected value: $EXPECTED_SUB_COUNT"
+echo
+
 # -------------------------------------------------------------------
 # PRE-FLIGHT CHECKS
 # -------------------------------------------------------------------
@@ -51,6 +80,61 @@ echo
 CURRENT_USER_OBJECT_ID=$(az ad signed-in-user show --query id -o tsv)
 
 # -------------------------------------------------------------------
+# ENVIRONMENT SUFFIX GUARDRAILS (WARNING ONLY)
+# -------------------------------------------------------------------
+
+echo "[INFO] Performing environment suffix sanity checks"
+
+FOUND_ENV_SUFFIXES=()
+
+for SUB_NAME in "${SUBSCRIPTION_NAMES[@]}"; do
+  ENV_SUFFIX="${SUB_NAME##*-}"
+  FOUND_ENV_SUFFIXES+=("$ENV_SUFFIX")
+done
+
+for EXPECTED_ENV in "${EXPECTED_ENV_SUFFIXES[@]}"; do
+  if [[ ! " ${FOUND_ENV_SUFFIXES[*]} " =~ " ${EXPECTED_ENV} " ]]; then
+    echo "[WARN] Expected environment suffix not found: $EXPECTED_ENV"
+  fi
+done
+
+for FOUND_ENV in "${FOUND_ENV_SUFFIXES[@]}"; do
+  if [[ ! " ${EXPECTED_ENV_SUFFIXES[*]} " =~ " ${FOUND_ENV} " ]]; then
+    echo "[WARN] Unexpected environment suffix found: $FOUND_ENV"
+  fi
+done
+
+echo "[OK] Environment suffix sanity checks completed"
+echo
+
+# -------------------------------------------------------------------
+# DOMAIN CONSISTENCY GUARDRAIL (WARNING ONLY)
+# -------------------------------------------------------------------
+
+echo "[INFO] Performing domain consistency sanity check"
+
+FOUND_DOMAINS=()
+
+for SUB_NAME in "${SUBSCRIPTION_NAMES[@]}"; do
+  # Strip leading 'sub-' if present, then strip trailing '-<env>'
+  NAME_CORE="${SUB_NAME#sub-}"
+  DOMAIN="${NAME_CORE%-*}"
+  FOUND_DOMAINS+=("$DOMAIN")
+done
+
+UNIQUE_DOMAINS=$(printf "%s\n" "${FOUND_DOMAINS[@]}" | sort -u)
+DOMAIN_COUNT=$(echo "$UNIQUE_DOMAINS" | wc -l | tr -d ' ')
+
+if [[ "$DOMAIN_COUNT" -gt 1 ]]; then
+  echo "[WARN] Multiple domain components detected in subscription names:"
+  echo "$UNIQUE_DOMAINS" | sed 's/^/       - /'
+else
+  echo "[OK] Subscription domain is consistent: $UNIQUE_DOMAINS"
+fi
+
+echo
+
+# -------------------------------------------------------------------
 # RESOLVE SUBSCRIPTION NAMES → IDS
 # -------------------------------------------------------------------
 
@@ -60,6 +144,7 @@ SUBSCRIPTIONS=()
 
 for SUB_NAME in "${SUBSCRIPTION_NAMES[@]}"; do
   MATCH_COUNT=$(az account list \
+    --only-show-errors \
     --query "[?name=='${SUB_NAME}'] | length(@)" \
     -o tsv)
 
@@ -75,6 +160,7 @@ for SUB_NAME in "${SUBSCRIPTION_NAMES[@]}"; do
   fi
 
   SUB_ID=$(az account list \
+    --only-show-errors \
     --query "[?name=='${SUB_NAME}'].id | [0]" \
     -o tsv)
 
