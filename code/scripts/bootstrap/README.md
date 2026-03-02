@@ -1,84 +1,127 @@
 # Bootstrap Scripts
 
-One‑time setup (subscriptions, remote state, pipeline identity) that must exist before this project and future projects can support subsequent IaC‑controlled deployments.
+This directory contains one-time bootstrap scripts that establish the foundational control-plane prerequisites required before governance and workload infrastructure can be managed safely via Infrastructure-as-Code (IaC).
 
-```text
-1. create-arm-subscriptions.sh - DEPRECATED (intentionally not implemented; subscription creation is manual by design)
-2. create-remote-state-resources.sh
-3. create-pipeline-spn.sh
-4. create-pipeline-service-connection.sh
-5. assign-pim-roles.sh
-```
+These scripts intentionally favour explicit intent, fail-fast behaviour, and human-controlled privilege escalation over generic automation. They are designed to be run rarely, deliberately, and by a platform engineer with appropriate temporary privileges.
+
+Once these steps are complete, all subsequent governance and platform configuration is expected to be performed via IaC.
+
+0. create-arm-subscriptions.sh (DEPRECATED; intentionally not implemented)
+1. 01-verify-subscriptions-ready.sh
+2. 02-create-remote-state-resources.sh
+3. 03-create-pipeline-identity.sh
+4. 04-create-pipeline-service-connection.sh
+5. 05-assign-pim-roles.sh
+
+---
 
 ## Subscription Creation
 
-New Azure subscriptions must be created manually by a designated EA account with subscription‑creation rights. Subscription creation is a controlled billing operation and cannot be safely or appropriately automated from this repository.
+New Azure subscriptions must be created manually by a designated enrolment / billing account with subscription-creation rights.
 
-The original intention to provide a `create-arm-subscriptions.sh` script has therefore been deliberately superseded.
+Subscription creation is a controlled billing operation and cannot be safely or appropriately automated from this repository. The original intention to provide a create-arm-subscriptions.sh script has therefore been deliberately superseded.
 
-### Why this is Manual
+### Why This Is Manual
 
-Subscription creation is intentionally excluded from automation because it operates at the billing boundary and carries financial risk.
+Subscription creation operates at the billing boundary and carries financial, contractual, and organisational risk.
 
-Restricting this step to an explicitly authorised human identity reduces blast radius and aligns with least‑privilege, audit, and financial‑control requirements.
+Restricting this step to an explicitly authorised human identity:
 
-Management group creation and subscription placement are performed later via IaC, once these prerequisite subscriptions and identities exist.
+- Reduces blast radius
+- Aligns with least-privilege and audit expectations
+- Avoids accidental or uncontrolled spend
+- Ensures clear accountability
 
-### Secure Manual Workflow
+Management group creation, policy assignment, and subscription placement are performed later via IaC, once these prerequisite subscriptions and identities exist.
 
-The recommended bootstrap process is:
+This manual boundary also ensures that subsequent identity and governance bootstrapping occurs only after subscriptions exist within a known tenant and billing context.
 
-- A designated "SubCreate" EA enrolment account (with subscription‑creation rights) creates each required subscription in the correct tenant and offer
-- The SubCreate user assigns the platform engineer a temporary static Owner role at the subscription scope
+---
+
+## Secure Manual Workflow
+
+The recommended bootstrap workflow is:
+
+- A designated enrolment account (e.g. `SubCreate@organisation.com`) creates each required subscription in the correct tenant and billing offer
+- The enrolment user assigns the platform engineer a temporary static Owner role at the subscription scope
 - Using this temporary ownership, the platform engineer:
   - Enables and configures Privileged Identity Management (PIM) for the subscription(s)
 - The engineer then:
-  - Uses PIM to activate eligible Owner access
+  - Activates eligible Owner access via PIM
   - Removes the temporary static Owner role assignment
 
-This ensures that ongoing administrative elevation is managed exclusively through PIM, rather than through permanent role assignments.
+This ensures that ongoing administrative elevation is managed exclusively through PIM rather than permanent role assignments.
 
-Subscription creation is expected to be a rare, one‑off bootstrap activity. All subsequent governance configuration is performed via IaC.
+Subscription creation is expected to be a rare, one-off bootstrap activity. All subsequent governance configuration is performed via IaC.
+
+---
 
 ## Execution Flow
 
-```text
-0. MANUAL STEP (run by enrolment account e.g. SubCreate@organisation.com)
+0. MANUAL STEP (run by enrolment / billing account)
    - Create platform subscriptions via Portal (Cost Management + Billing → Create)
    - Assign YOUR_EMAIL → Owner on each new subscription (IAM → Add → Owner)
-   - Note subscription IDs
+   - Record subscription IDs
 
-1. **01-verify-subscriptions-ready.sh** (run by platform engineer)
-   - Confirms engineer has Owner access to target subscriptions
-   - Fails fast if handoff incomplete
+1. 01-verify-subscriptions-ready.sh (run by platform engineer)
+   - Confirms the engineer has Owner access to target subscriptions
+   - Fails fast if handoff is incomplete or ambiguous
 
-2. **create-remote-state-resources.sh** (run by platform engineer)  
-3. **create-pipeline-spn.sh** (run by engineer)
-4. **create-pipeline-service-connection.sh** (run by platform engineer)
-5. **assign-pim-roles.sh** (run by engineer) → replace static Owner with PIM eligible
-  - Removes all permanent Owner assignments
-  - This is the final bootstrap step and should be run only after all other scripts succeed
-```
+2. 02-create-remote-state-resources.sh (run by platform engineer)
+   - Provisions Terraform remote state resources in the governance (prod) subscription
+   - Storage account creation is performed via ARM/Bicep due to known Azure CLI limitations in bootstrap contexts
+
+3. 03-create-pipeline-identity.sh (run by platform engineer)
+   - Creates a pipeline service principal using Azure DevOps workload identity federation (OIDC)
+   - No client secrets are created or stored
+   - Federation is scoped at the Azure DevOps project level
+   - RBAC is intentionally limited to Terraform state access only
+
+4. 04-create-pipeline-service-connection.sh (run by platform engineer)
+   - Creates the Azure DevOps service connection referencing the federated pipeline identity
+
+5. 05-assign-pim-roles.sh (run by platform engineer)
+   - Removes all permanent Owner role assignments
+   - Ensures all ongoing administrative access is PIM-controlled
+   - This is the final bootstrap step and should be run only after all other scripts succeed
+
+---
 
 ## Bootstrap Completion Criteria
 
-A subscription is considered bootstrap‑complete when:
+A subscription is considered bootstrap-complete when:
 
 - No permanent human Owner role assignments remain
 - PIM eligible Owner access is configured for platform engineers
 - Terraform remote state storage is provisioned and accessible
-- The pipeline identity can authenticate successfully
+- The pipeline identity can authenticate successfully using workload identity federation
+- The pipeline identity has only the minimum RBAC required at this stage
 - Subscription IDs are recorded as inputs for governance IaC
+
+---
 
 ## Prerequisites
 
-- Step 0: SubCreate account access (enrolment account with billing scope)
-- Steps 1-5: Owner role on new subscriptions (granted manually in step 0)
+- Step 0: Enrolment / billing account access with subscription-creation rights
+- Steps 1–5: Temporary Owner role on new subscriptions (granted manually in Step 0)
+- Script 03: Temporary Entra ID application administration permissions (e.g. Application Administrator, typically activated via PIM)
+
+---
 
 ## Handoff Pattern
 
-```text
-Billing Admin (SubCreate) ── MANUAL ──► Static Owner ──► Platform Engineer
-                                             │
-                                     IaC + PIM eligible Owner
-```
+Billing Admin (enrolment account)
+        |
+        |  MANUAL (subscription creation)
+        v
+Temporary Static Owner
+        |
+        |  IaC + PIM enablement
+        v
+PIM Eligible Owner --> Ongoing platform operations
+
+This handoff pattern ensures that:
+
+- High-risk actions are human-controlled
+- Privilege escalation is time-bound and auditable
+- Long-lived standing access is avoided
