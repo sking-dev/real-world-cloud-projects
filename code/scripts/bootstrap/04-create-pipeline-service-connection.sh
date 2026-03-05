@@ -11,7 +11,7 @@ echo
 
 # Azure
 EXPECTED_TENANT_ID="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-EXPECTED_SUBSCRIPTION_NAME="sub-myorg-azuregovernance-liv"
+EXPECTED_SUBSCRIPTION_NAME="sub-myorg-azuregovernance-prod"
 SUBSCRIPTION_ID="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 
 # Azure DevOps
@@ -19,7 +19,7 @@ AZDO_ORG_NAME="myorg"
 AZDO_PROJECT_NAME="azuregovernance"
 
 # Identity (from Script 03)
-SPN_DISPLAY_NAME="az-sub-myorg-azuregovernance-spn-liv"
+SPN_DISPLAY_NAME="az-sub-myorg-azuregovernance-spn-prod"
 
 # Service connection naming convention:
 # Service connection name == SPN display name
