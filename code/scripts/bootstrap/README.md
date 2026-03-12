@@ -9,9 +9,8 @@ After successful execution, all ongoing governance and platform configuration mu
 0. create-arm-subscriptions.sh (DEPRECATED; intentionally not implemented)
 1. 01-verify-subscriptions-ready.sh
 2. 02-create-remote-state-resources.sh
-3. 03-create-pipeline-identity.sh
-4. 04-create-pipeline-service-connection.sh
-5. 05-enforce-pim-owner-access.sh
+3. 03-create-pipeline-service-connection.sh
+4. 04-enforce-pim-owner-access.sh
 
 ---
 
@@ -67,17 +66,36 @@ Subscription creation is expected to be a rare, one‑off activity. All subseque
    - Provisions Terraform remote state resources in the governance (`prod`) subscription
    - Storage account creation is performed via ARM/Bicep due to Azure CLI limitations during bootstrap
 
-3. 03-create-pipeline-identity.sh (run by platform engineer)
-   - Creates a pipeline service principal using Azure DevOps workload identity federation (OIDC)
+3. 03-create-pipeline-service-connection.sh (run by platform engineer)
+   - Validates that the Azure DevOps service connection exists and uses workload identity federation (OIDC)
+   - Extracts the automatically-created app registration details
+   - Assigns RBAC (Storage Blob Data Contributor) scoped to Terraform state storage account only
    - No client secrets are created or stored
-   - Federation is scoped at the Azure DevOps project level
-   - RBAC is intentionally limited to Terraform state access only
 
-4. 04-create-pipeline-service-connection.sh (run by platform engineer)
-   - Creates the Azure DevOps service connection referencing the federated pipeline identity
-   - Authentication is validated implicitly by the first real pipeline execution
+   **Prerequisites:**
 
-5. 05-enforce-pim-owner-access.sh (run by platform engineer)
+   - Service connection must be created manually in Azure DevOps UI
+   - Requires Project Administrator role in Azure DevOps
+   - Requires Application Administrator (or Global Administrator) in Entra ID for automatic app registration
+
+   **Manual step (one-time):**
+
+   1. Navigate to Azure DevOps: Project settings > Pipelines > Service connections
+   2. Create new service connection:
+      - Type: Azure Resource Manager
+      - Authentication: Workload Identity federation (automatic)
+      - Subscription: `sub-myorg-azuregovernance-prod`
+      - Name: `az-sub-myorg-azuregovernance-spn-prod`
+   3. Run the script to configure RBAC
+
+   **Rationale for manual creation:**
+
+   - Azure DevOps automatic mode creates both app registration and federated credential atomically
+   - Prevents mismatches between Entra ID and Azure DevOps configuration
+   - Microsoft explicitly states automatic mode is not supported for non-user principals in automation
+   - UI-based creation is the officially supported approach for this workflow
+
+4. 04-enforce-pim-owner-access.sh (run by platform engineer)
    - Enforces the post‑bootstrap security end state
    - Removes **static human Owner** role assignments
    - Preserves:
@@ -114,9 +132,11 @@ Their presence is a conscious governance decision, not an oversight.
 ## Prerequisites
 
 - Step 0: Enrolment or billing account with subscription‑creation permissions
-- Steps 1–4: Temporary Owner role on new subscriptions
-- Script 03: Temporary Entra ID application administration permissions  
-  (e.g. Application Administrator, activated via PIM)
+- Steps 1–3: Temporary Owner role on new subscriptions
+- Step 3 (manual service connection creation):
+  - Azure DevOps: Project Administrator role
+  - Entra ID: Application Administrator (or Global Administrator) via PIM
+  - Azure: Contributor or Owner on subscription
 - PIM configuration requires temporary Entra ID administrative elevation  
   (e.g. Privileged Role Administrator or Global Administrator)
 
@@ -204,7 +224,7 @@ This validation is required before enforcing PIM‑only access.
 
 Once PIM has been configured and validated:
 
-- Run `05-enforce-pim-owner-access.sh`
+- Run `04-enforce-pim-owner-access.sh`
 - The script will:
   - Remove static human Owner assignments
   - Preserve explicit break‑glass accounts
