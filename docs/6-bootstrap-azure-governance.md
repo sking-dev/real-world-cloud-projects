@@ -22,6 +22,8 @@ The output is a minimal but production‑grade **governance execution environmen
     - `sub-myorg-azuregovernance-prod`  
 - Provision **identity and access** for governance automation (service principals or managed identities) with least‑privilege at the tenant root and subscription scopes.
 - Stand up a **CI/CD platform** (e.g. Azure DevOps organisation / GitHub org) and connect it to the Azure tenant.
+  - Service connection creation uses Azure DevOps UI (automatic mode) to ensure atomic creation of app registration and federated credential.
+  - Bootstrap script validates the service connection and configures minimal RBAC.
 - Create the initial **`myorg-azuregovernance` repository** with basic structure, branching, and protection rules.
 - Validate that the governance pipeline can **authenticate and perform read‑only operations** at the tenant and subscription scopes.
 - Keep all configuration **scripted or IaC‑driven** (Bash, Azure CLI, Terraform) wherever Azure supports it.
@@ -37,8 +39,10 @@ The output is a minimal but production‑grade **governance execution environmen
   - In each governance subscription, `rg-governance-core` — service principals, managed identities, Key Vault, storage for state/logs.
   - `rg-governance-ci` — agents, pipeline artefact storage, and supporting services.
 - **Identities and access:**
-  - One or more **service principals / workload identities** for governance IaC (e.g. `spn-myorg-azuregovernance`).
-  - Role assignments at:
+  - **Workload identity** for governance IaC created automatically by Azure DevOps when service connection is established.
+  - Initial role assignments (bootstrap phase):
+    - `Storage Blob Data Contributor` on Terraform state storage account only (least privilege).
+  - Additional role assignments (scaffolding phase, applied via separate scripts):
     - Tenant root / initial management group: `Owner` or `Contributor` plus `Resource Policy Contributor` (or equivalent custom roles) for the IaC identity.
     - Each `sub-myorg-azuregovernance-*` subscription for hosting governance infrastructure.
 - **CI/CD integration:**
@@ -54,7 +58,10 @@ The output is a minimal but production‑grade **governance execution environmen
 - **Subscription layout for governance:**
   - Use a simple, environment‑aligned set of governance subscriptions (`dev`, `uat`, `pp`, `prod`) to host IaC state, secrets, and CI/CD resources, deferring landing zone subscription design to later projects.  Governance subscriptions are created as a flat, environment‑aligned set; however, **only the production subscription is expected to host active governance resources initially**.
 - **Identity pattern:**
-  - Choose between **service principal + secret**, **service principal + certificate**, or **federated/OIDC identities** for CI/CD pipelines.
+  - Use **workload identity federation (OIDC)** for CI/CD pipelines.
+  - App registration and federated credential are created automatically by Azure DevOps (automatic mode).
+  - No client secrets or certificates are created or stored.
+  - This approach prevents configuration mismatches between Entra ID and Azure DevOps.
 - **State location:**
   - Decide where **Terraform state** and pipeline artefacts will live (storage account, naming, redundancy, region).
 - **CI/CD platform:**
@@ -62,9 +69,37 @@ The output is a minimal but production‑grade **governance execution environmen
 - **Access boundaries:**
   - Decide the **minimum scopes** where governance IaC needs permissions (tenant root vs first‑level management group vs specific subscriptions).
 - **Bootstrap execution model:**
-  - Bootstrap activities (subscription onboarding, remote state creation, pipeline identity setup) are **human‑triggered and script‑driven**, not continuously automated via CI/CD. This ensures explicit intent at high‑privilege and billing boundaries.
+  - Bootstrap activities combine **manual steps** (subscription creation, service connection creation) with **validation scripts** (access verification, RBAC configuration).
+  - Service connection creation is performed manually via Azure DevOps UI to leverage automatic mode (atomic app registration + federated credential creation).
+  - Scripts validate configuration and assign minimal RBAC, ensuring explicit intent at high‑privilege and billing boundaries.
+  - This hybrid approach is intentional: Microsoft explicitly states automatic mode is not supported for non-user principals in automation.
 - **Bootstrap completion criteria:**
   - A subscription is considered bootstrap‑complete when ownership is normalised via PIM, remote state and secrets are provisioned, and the governance pipeline can authenticate and perform non‑destructive operations.
+
+## Bootstrap Approach: Manual + Scripted
+
+The bootstrap process intentionally combines manual steps with validation scripts:
+
+### Manual Steps (Azure DevOps UI)
+
+- **Service connection creation** using workload identity federation (automatic mode)
+  - Azure DevOps creates app registration and federated credential atomically
+  - Prevents configuration mismatches between Entra ID and Azure DevOps
+  - Microsoft's officially supported approach for this workflow
+
+### Scripted Steps (Bash + Azure CLI)
+
+- **Subscription verification** — confirms access and correct hand-off
+- **Remote state provisioning** — creates storage account and containers
+- **Service connection validation** — verifies OIDC configuration
+- **RBAC assignment** — grants minimal permissions (state storage only initially)
+
+### Rationale
+
+- **Atomic operations:** Automatic mode ensures app registration and federated credential are created together, eliminating race conditions and mismatches
+- **Microsoft guidance:** Automatic mode is not supported for non-user principals in automation scenarios
+- **Fail-fast validation:** Scripts verify configuration immediately after manual steps
+- **Least privilege:** Initial RBAC is intentionally minimal; additional permissions are granted later via scaffolding scripts
 
 ## Operations
 
@@ -74,12 +109,18 @@ The following steps describe the intended execution flow, combining required man
 - Provisioned a `rg-governance-core` resource group in the dev and prod governance subscriptions and deployed:
   - Terraform state storage account and containers.
   - Key Vault for governance secrets.
-- Registered a **service principal** for governance IaC (`spn-myorg-azuregovernance`) and granted:
-  - `Owner` and policy‑related roles at tenant root (or a bootstrap management group) to allow management group creation and policy assignment later.
-  - `Contributor` on the `sub-myorg-azuregovernance-*` governance subscriptions.
-- Set up an Azure DevOps organisation (or GitHub org) and:
+- Created **service connection** in Azure DevOps UI using workload identity federation (automatic mode):
+  - Azure DevOps automatically created app registration and federated credential.
+  - Bootstrap script validated configuration and assigned initial RBAC:
+    - `Storage Blob Data Contributor` on Terraform state storage account only.
+  - Additional RBAC assignments (tenant root, governance subscriptions) are deferred to scaffolding phase and applied via separate scripts.
+- Set up an Azure DevOps organisation and:
   - Created the `myorg-azuregovernance` project and repository.
-  - Configured a service connection or OIDC trust to the governance SPN or workload identity.
+  - Manually created service connection via UI (Project settings > Pipelines > Service connections):
+    - Type: Azure Resource Manager
+    - Authentication: Workload Identity federation (automatic)
+    - This creates app registration and federated credential atomically.
+  - Ran bootstrap script to validate service connection and configure RBAC.
   - Enabled branch protections and PR validation policies on `main`.
 - Committed initial repo scaffolding:
   - `/docs/` with high‑level governance notes.
@@ -94,7 +135,6 @@ The following steps describe the intended execution flow, combining required man
 
 - Explore a controlled **subscription request and onboarding workflow** (e.g. approval‑gated automation) rather than fully manual creation, while retaining explicit human authorisation at the billing boundary.
 - Extend bootstrap IaC to create the **initial management groups**, paving the way for Project 6 to take full ownership.
-- Harden security by migrating from SPN secrets to **federated credentials / managed identities** where supported.
 - Add monitoring and alerting for governance pipelines and state storage, including access anomalies and deployment failures.
 
 ## Code References
@@ -118,7 +158,6 @@ The following steps describe the intended execution flow, combining required man
 3. Create rg-governance-core in the relevant governance subscriptions.
 4. Deploy storage account + containers for Terraform state.
 5. Deploy Key Vault and configure access policies.
-6. Create governance service principal / federated identity.
-7. Assign roles at tenant root and governance subscriptions.
-8. Output IDs and secrets into Key Vault and a local config file.
-```
+6. Manually create service connection in Azure DevOps UI (workload identity federation, automatic mode).
+7. Run bootstrap script to validate service connection and assign minimal RBAC (state storage access only).
+8. Record application ID and service principal ID for reference (no secrets to store).
